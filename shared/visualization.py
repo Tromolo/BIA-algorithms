@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from .functions import Function, get_function_domain, get_function_optimum
+from .functions import Function, get_function_domain, get_function_optimum, get_effective_visualization_bounds
 
 
 class Visualizer:    
@@ -33,13 +33,12 @@ class Visualizer:
         fig = plt.figure(figsize=(12, 9))
         ax = fig.add_subplot(111, projection='3d')
         
-        # Create surface plot with custom colormap
-        surface = ax.plot_surface(X, Y, Z, cmap='viridis', alpha=0.8,
-                                linewidth=0, antialiased=True)
+        surface = ax.plot_surface(X, Y, Z, cmap='plasma', alpha=0.9,
+                                linewidth=0, antialiased=True, 
+                                rcount=100, ccount=100, shade=True)
         
-        # Add contour lines at the base
-        ax.contour(X, Y, Z, zdir='z', offset=np.min(Z), 
-                  cmap='viridis', alpha=0.6)
+        contours = ax.contour(X, Y, Z, zdir='z', offset=np.min(Z), 
+                            cmap='plasma', alpha=0.7, levels=15)
         
         # Mark global optimum if known and requested
         if show_optimum:
@@ -49,17 +48,26 @@ class Visualizer:
                 if (x_range[0] <= optimum_point[0] <= x_range[1] and 
                     y_range[0] <= optimum_point[1] <= y_range[1]):
                     ax.scatter([optimum_point[0]], [optimum_point[1]], [optimum_value],
-                             color='red', s=100, marker='*')
+                             color='red', s=150, marker='*', edgecolors='black', linewidth=1)
         
-        # Customize plot
-        ax.set_xlabel('X₁', fontsize=12)
-        ax.set_ylabel('X₂', fontsize=12)
-        ax.set_zlabel(f'{func_name.capitalize()} Function Value', fontsize=12)
-        ax.set_title(f'{func_name.capitalize()} Function - 3D Surface', fontsize=14, pad=20)
+        ax.set_xlabel('X₁', fontsize=14, labelpad=10)
+        ax.set_ylabel('X₂', fontsize=14, labelpad=10)
+        ax.set_zlabel(f'{func_name.capitalize()} Function Value', fontsize=14, labelpad=10)
+        ax.set_title(f'{func_name.capitalize()} Function - 3D Surface', fontsize=16, pad=20, fontweight='bold')
         
-        # Add colorbar
-        fig.colorbar(surface, ax=ax, shrink=0.5, aspect=30)
+        ax.grid(True, alpha=0.3)
+        ax.xaxis.pane.fill = False
+        ax.yaxis.pane.fill = False
+        ax.zaxis.pane.fill = False
+        ax.xaxis.pane.set_edgecolor('gray')
+        ax.yaxis.pane.set_edgecolor('gray')
+        ax.zaxis.pane.set_edgecolor('gray')
+        ax.xaxis.pane.set_alpha(0.1)
+        ax.yaxis.pane.set_alpha(0.1)
+        ax.zaxis.pane.set_alpha(0.1)
         
+        cbar = fig.colorbar(surface, ax=ax, shrink=0.6, aspect=30, pad=0.1)
+        cbar.ax.tick_params(labelsize=12)
         
         # Optimize viewing angle
         ax.view_init(elev=30, azim=45)
@@ -67,7 +75,7 @@ class Visualizer:
         plt.tight_layout()
         
         if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
         
         return fig, ax
     
@@ -106,25 +114,34 @@ class Visualizer:
             y_traj = [point[1] for point in best_points]
             z_traj = [point[2] for point in best_points]
             
-            # Plot trajectory
-            ax.plot(x_traj, y_traj, z_traj, 'r-', linewidth=3, alpha=0.9, 
-                    label='Search Trajectory')
+            ax.plot(x_traj, y_traj, z_traj, color='white', linewidth=4, alpha=0.8, zorder=9)
+            ax.plot(x_traj, y_traj, z_traj, color='red', linewidth=2.5, alpha=1.0, 
+                    label='Search Trajectory', zorder=10)
             
-            # Mark start and end points
             ax.scatter([x_traj[0]], [y_traj[0]], [z_traj[0]], 
-                      color='green', s=150, marker='o', label='Start', zorder=10)
+                      color='lime', s=200, marker='o', label='Start', 
+                      edgecolors='black', linewidth=2, zorder=15)
             ax.scatter([x_traj[-1]], [y_traj[-1]], [z_traj[-1]], 
-                      color='blue', s=150, marker='s', label='Best Found', zorder=10)
+                      color='cyan', s=200, marker='s', label='Best Found', 
+                      edgecolors='black', linewidth=2, zorder=15)
             
-            # Mark intermediate points
             if len(best_points) > 2:
                 ax.scatter(x_traj[1:-1], y_traj[1:-1], z_traj[1:-1], 
-                          color='orange', s=50, alpha=0.8, label='Search Points', zorder=8)
+                          color='yellow', s=60, alpha=0.9, label='Search Points', 
+                          edgecolors='black', linewidth=1, zorder=12)
         
-        # Only add legend if we have trajectory data
         if len(best_points) >= 1 or len(search_history) > 0:
-            ax.legend()
-        ax.set_title(f'{func_name.capitalize()} Function - {algorithm_name} Trajectory', fontsize=14, pad=20)
+            legend = ax.legend(loc='upper left', bbox_to_anchor=(0.02, 0.98), 
+                             fontsize=11, frameon=True, fancybox=True, 
+                             shadow=True, framealpha=0.9)
+            legend.get_frame().set_facecolor('white')
+        
+        ax.set_title(f'{func_name.capitalize()} Function - {algorithm_name} Trajectory', 
+                    fontsize=16, pad=20, fontweight='bold')
+        
+        if x_range is not None and y_range is not None:
+            ax.set_xlim(x_range[0], x_range[1])
+            ax.set_ylim(y_range[0], y_range[1])
         
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -177,5 +194,85 @@ class Visualizer:
         
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig
+    
+    def plot_all_simulated_annealing_grid(self, results_dict, save_path=None):
+        
+        functions = [
+            'sphere', 'ackley', 'rastrigin', 
+            'rosenbrock', 'griewank', 'schwefel',
+            'levy', 'michalewicz', 'zakharov'
+        ]
+        
+        fig = plt.figure(figsize=(20, 16))
+        fig.suptitle('Simulated Annealing on All Benchmark Functions (iters=1000, seed=42)', 
+                    fontsize=20, fontweight='bold', y=0.95)
+        
+        for i, func_name in enumerate(functions):
+            ax = fig.add_subplot(3, 3, i+1, projection='3d')
+            
+            vis_bounds = get_effective_visualization_bounds(func_name)
+            X, Y, Z = self.create_meshgrid(func_name, vis_bounds, vis_bounds)
+            
+            surface = ax.plot_surface(X, Y, Z, cmap='plasma', alpha=0.8,
+                                    linewidth=0, antialiased=True, 
+                                    rcount=40, ccount=40, shade=True)
+            
+            if func_name in results_dict:
+                result = results_dict[func_name]
+                history = result['history']
+                best_points = [point for point in history if point[3]]
+                
+                if len(best_points) >= 2:
+                    x_traj = [point[0] for point in best_points]
+                    y_traj = [point[1] for point in best_points]
+                    z_traj = [point[2] for point in best_points]
+                    
+                    ax.plot(x_traj, y_traj, z_traj, color='white', linewidth=3, alpha=0.9)
+                    ax.plot(x_traj, y_traj, z_traj, color='red', linewidth=2, alpha=1.0)
+                    
+                    ax.scatter([x_traj[0]], [y_traj[0]], [z_traj[0]], 
+                              color='lime', s=80, marker='o', edgecolors='black', linewidth=1)
+                    ax.scatter([x_traj[-1]], [y_traj[-1]], [z_traj[-1]], 
+                              color='cyan', s=80, marker='s', edgecolors='black', linewidth=1)
+                
+                best_val = result['best_solution'].f
+                ax.text2D(0.02, 0.98, f'best={best_val:.4f}', transform=ax.transAxes, 
+                         fontsize=10, verticalalignment='top', 
+                         bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+            
+            optimum_point, optimum_value = get_function_optimum(func_name)
+            if optimum_point is not None:
+                if (vis_bounds[0] <= optimum_point[0] <= vis_bounds[1] and 
+                    vis_bounds[0] <= optimum_point[1] <= vis_bounds[1]):
+                    ax.scatter([optimum_point[0]], [optimum_point[1]], [optimum_value],
+                             color='red', s=60, marker='*', edgecolors='black', linewidth=1)
+            
+            ax.set_title(f'{func_name.capitalize()}', fontsize=14, fontweight='bold', pad=10)
+            ax.set_xlabel('x₁', fontsize=10)
+            ax.set_ylabel('x₂', fontsize=10)
+            ax.set_zlabel('f(x)', fontsize=10)
+            
+            ax.grid(True, alpha=0.3)
+            ax.xaxis.pane.fill = False
+            ax.yaxis.pane.fill = False
+            ax.zaxis.pane.fill = False
+            ax.xaxis.pane.set_alpha(0.1)
+            ax.yaxis.pane.set_alpha(0.1)
+            ax.zaxis.pane.set_alpha(0.1)
+            
+            ax.view_init(elev=30, azim=45)
+            
+            ax.locator_params(nbins=4)
+            
+            ax.set_xlim(vis_bounds[0], vis_bounds[1])
+            ax.set_ylim(vis_bounds[0], vis_bounds[1])
+        
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.92)
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
         
         return fig

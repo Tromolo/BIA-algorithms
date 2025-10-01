@@ -4,12 +4,10 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from shared.functions import (get_function_domain, get_function_optimum, 
-                       get_all_functions, get_function_categories, get_visualization_bounds)
+from shared.functions import (get_function_categories, get_visualization_bounds)
 from hill_climbing import HillClimbingAlgorithm
 from shared.visualization import Visualizer
 from shared.utils import create_output_directory
-
 
 def demonstrate_hill_climbing():
     print("Testing Hill Climbing algorithm:")

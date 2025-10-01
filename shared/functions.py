@@ -114,7 +114,7 @@ def get_function_domain(func_name):
         'sphere': (-5.12, 5.12),          # Sphere Function
         
         # Plate-Shaped functions
-        'zakharov': (-5, 10),             # Zakharov Function
+        'zakharov': (-10, 10),             # Zakharov Function
         
         # Valley-Shaped functions
         'rosenbrock': (-2.048, 2.048),    # Rosenbrock Function
@@ -142,16 +142,19 @@ def get_function_categories():
     }
 
 
-def get_visualization_bounds(func_name):
+def get_effective_visualization_bounds(func_name):
     bounds = get_function_domain(func_name)
     
     adjustments = {
         'griewank': (-20, 20),
-        'schwefel': (-100, 100), 
-        'ackley': (-15, 15)
+        'schwefel': (-400, 400), 
+        'ackley': (-30, 30)
     }
     
     return adjustments.get(func_name, bounds)
+
+def get_visualization_bounds(func_name):
+    return get_effective_visualization_bounds(func_name)
 
 
 def get_function_optimum(func_name, dim=2):
