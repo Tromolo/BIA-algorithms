@@ -140,7 +140,6 @@ class GeneticAlgorithm:
             
             # for j in range(NP):
             for j in range(population_size):
-                # parent_A = population[j]
                 parent_a = population[j]
                 
                 # parent_B = random individual from population (parent_B != parent_A)
@@ -151,7 +150,7 @@ class GeneticAlgorithm:
                 offspring = self.crossover_order(parent_a, parent_b)
                 
                 # if np.random.uniform() < 0.5: offspring_AB = mutate(offspring_AB)
-                if np.random.uniform() < mutation_rate:  # mutation_rate = 0.5 by default
+                if np.random.uniform() < mutation_rate:
                     offspring = self.mutate_swap(offspring)
                 
                 # Evaluate offspring_AB
