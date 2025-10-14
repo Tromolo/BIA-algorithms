@@ -7,6 +7,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from shared.functions import (get_function_categories, get_function_domain, get_effective_visualization_bounds)
 from differential_evolution import DifferentialEvolutionAlgorithm
 from shared.visualization import Visualizer
+from shared.animation import AnimationCreator
 from shared.utils import create_output_directory
 
 def demonstrate_differential_evolution():
@@ -157,22 +158,154 @@ def create_comprehensive_comparison():
     print("\nComprehensive analysis completed.")
 
 
-def main():
-    print("=" * 60)
-    print("EXERCISE 5: Differential Evolution Algorithm")
-    print("=" * 60)
-    print()
-    print("Parameters:")
-    print("  Population size (NP): 20")
-    print("  Mutation factor (F): 0.5")
-    print("  Crossover rate (CR): 0.5")
-    print("  Max generations (G_maxim): 50")
-    print()
+def create_comprehensive_grid_visualization():
+    output_dir = create_output_directory("Exercise-5")
+    visualizer = Visualizer(resolution=50)
     
+    NP = 20
+    F = 0.5
+    CR = 0.5
+    G_maxim = 50
+    
+    results_dict = {}
+    categories = get_function_categories()
+    
+    for category, functions in categories.items():
+        for func_name in functions:
+            if func_name == 'griewank':
+                search_bounds = (-20, 20)
+            else:
+                search_bounds = get_function_domain(func_name)
+            
+            de = DifferentialEvolutionAlgorithm(seed=42)
+            result = de.differential_evolution(
+                func_name, search_bounds,
+                NP=NP,
+                F=F,
+                CR=CR,
+                G_maxim=G_maxim,
+                dimension=2,
+                verbose=False
+            )
+            
+            results_dict[func_name] = result
+            print(f"  {func_name.capitalize():<12} completed (best: {result['best_solution'].f:.4f})")
+    
+    fig = visualizer.plot_all_differential_evolution_grid(
+        results_dict, 
+        save_path=f"{output_dir}/differential_evolution_comprehensive_grid.png"
+    )
+    plt.close(fig)
+    
+    print("Comprehensive grid visualization completed.")
+
+
+def create_heatmap_visualizations():
+    output_dir = create_output_directory("Exercise-5")
+    visualizer = Visualizer(resolution=100)
+    
+    NP = 20
+    F = 0.5
+    CR = 0.5
+    G_maxim = 50
+
+    selected_functions = {
+        'sphere': (-20, 20),
+        'ackley': (-20, 20),
+        'rastrigin': (-5.12, 5.12)
+    }
+    
+    for func_name, vis_bounds in selected_functions.items():
+        de = DifferentialEvolutionAlgorithm(seed=42)
+        
+        result = de.differential_evolution(
+            func_name, vis_bounds,
+            NP=NP,
+            F=F,
+            CR=CR,
+            G_maxim=G_maxim,
+            dimension=2,
+            verbose=False
+        )
+        
+        filename = f"de_{func_name}_heatmap.png"
+        fig, ax = visualizer.plot_search_trajectory_2d_heatmap(
+            func_name, result['history'], 
+            vis_bounds, vis_bounds,
+            save_path=f"{output_dir}/{filename}", 
+            algorithm_name="Differential Evolution",
+            show_all_points=True
+        )
+        plt.close(fig)
+        
+        best_sol = result['best_solution']
+        print(f"  {func_name.capitalize():<12} heatmap saved: {filename} (best: {best_sol.f:.6f})")
+    
+    print("Heatmap visualizations completed.")
+
+
+def create_animated_gifs():
+    output_dir = create_output_directory("Exercise-5")
+    gifs_dir = f"{output_dir}/gifs"
+    os.makedirs(gifs_dir, exist_ok=True)
+    
+    animator = AnimationCreator(resolution=80)
+    de = DifferentialEvolutionAlgorithm(seed=42)
+    
+    NP = 20
+    F = 0.5
+    CR = 0.5
+    G_maxim = 50
+    
+    animation_functions = {
+        'sphere': (-5.12, 5.12),
+        'ackley': (-20, 20),
+        'rastrigin': (-5.12, 5.12),
+        'rosenbrock': (-2.048, 2.048),
+        'griewank': (-20, 20),
+        'schwefel': (-400, 400),
+        'levy': (-10, 10),
+        'michalewicz': (0, np.pi),
+        'zakharov': (-10, 10)
+    }
+    
+    print(f"  Saving GIFs to: {gifs_dir}/")
+    
+    for func_name, bounds in animation_functions.items():
+        result = de.differential_evolution(
+            func_name, bounds,
+            NP=NP,
+            F=F,
+            CR=CR,
+            G_maxim=G_maxim,
+            dimension=2,
+            verbose=False
+        )
+        
+        gif_path = f"{gifs_dir}/de_{func_name}_evolution.gif"
+        num_frames = animator.create_algorithm_animation_2d(
+            func_name, 
+            result['history'], 
+            bounds,
+            save_path=gif_path,
+            algorithm_name="Differential Evolution",
+            fps=5,  # 5 frames per second
+            population_size=NP
+        )
+        
+        print(f"  {func_name.capitalize():<12} GIF created: de_{func_name}_evolution.gif ({num_frames} frames)")
+    
+    print("Animated GIF visualizations completed.")
+
+
+def main():
     demonstrate_differential_evolution()
     demonstrate_de_parameters()
     demonstrate_de_visualization()
+    create_heatmap_visualizations()
     create_comprehensive_comparison()
+    create_comprehensive_grid_visualization()
+    create_animated_gifs()
     
     print("\n" + "=" * 60)
     print("Exercise 5 completed.")

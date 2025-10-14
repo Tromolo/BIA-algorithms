@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import PillowWriter
 from .functions import Function, get_function_domain, get_function_optimum, get_effective_visualization_bounds
 
 
@@ -239,6 +240,181 @@ class Visualizer:
                 
                 best_val = result['best_solution'].f
                 ax.text2D(0.02, 0.98, f'best={best_val:.4f}', transform=ax.transAxes, 
+                         fontsize=10, verticalalignment='top', 
+                         bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+            
+            optimum_point, optimum_value = get_function_optimum(func_name)
+            if optimum_point is not None:
+                if (vis_bounds[0] <= optimum_point[0] <= vis_bounds[1] and 
+                    vis_bounds[0] <= optimum_point[1] <= vis_bounds[1]):
+                    ax.scatter([optimum_point[0]], [optimum_point[1]], [optimum_value],
+                             color='red', s=60, marker='*', edgecolors='black', linewidth=1)
+            
+            ax.set_title(f'{func_name.capitalize()}', fontsize=14, fontweight='bold', pad=10)
+            ax.set_xlabel('x₁', fontsize=10)
+            ax.set_ylabel('x₂', fontsize=10)
+            ax.set_zlabel('f(x)', fontsize=10)
+            
+            ax.grid(True, alpha=0.3)
+            ax.xaxis.pane.fill = False
+            ax.yaxis.pane.fill = False
+            ax.zaxis.pane.fill = False
+            ax.xaxis.pane.set_alpha(0.1)
+            ax.yaxis.pane.set_alpha(0.1)
+            ax.zaxis.pane.set_alpha(0.1)
+            
+            ax.view_init(elev=30, azim=45)
+            
+            ax.locator_params(nbins=4)
+            
+            ax.set_xlim(vis_bounds[0], vis_bounds[1])
+            ax.set_ylim(vis_bounds[0], vis_bounds[1])
+        
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.92)
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
+        
+        return fig
+    
+    def plot_search_trajectory_2d_heatmap(self, func_name, search_history, 
+                                         x_range=None, y_range=None, save_path=None, 
+                                         algorithm_name="Search", show_all_points=True):
+        # Create meshgrid for the function
+        X, Y, Z = self.create_meshgrid(func_name, x_range, y_range)
+        
+        # Create figure
+        fig, ax = plt.subplots(figsize=(10, 8))
+        
+        # Plot heatmap
+        heatmap = ax.contourf(X, Y, Z, levels=50, cmap='jet', alpha=0.9)
+        contour_lines = ax.contour(X, Y, Z, levels=15, colors='black', alpha=0.2, linewidths=0.5)
+        
+        # Add colorbar
+        cbar = plt.colorbar(heatmap, ax=ax, pad=0.02)
+        cbar.ax.set_ylabel('Function Value', fontsize=12, rotation=270, labelpad=20)
+        cbar.ax.tick_params(labelsize=10)
+        
+        if search_history:
+            # Extract all evaluated points
+            all_x = [point[0] for point in search_history]
+            all_y = [point[1] for point in search_history]
+            
+            # Extract best trajectory points
+            best_points = [point for point in search_history if point[3]]  # is_best = True
+            
+            if show_all_points:
+                # Show all evaluated points in black
+                ax.scatter(all_x, all_y, c='black', s=15, alpha=0.4, 
+                          marker='o', label='Evaluated points', zorder=5)
+            
+            if len(best_points) >= 2:
+                best_x = [point[0] for point in best_points]
+                best_y = [point[1] for point in best_points]
+                
+                # Plot trajectory line
+                ax.plot(best_x, best_y, color='white', linewidth=3, alpha=0.9, zorder=10)
+                ax.plot(best_x, best_y, color='lime', linewidth=2, alpha=1.0, 
+                       label='Best trajectory', zorder=11)
+                
+                # Mark intermediate best points
+                if len(best_points) > 2:
+                    ax.scatter(best_x[1:-1], best_y[1:-1], c='yellow', s=40, 
+                              edgecolors='black', linewidth=1, alpha=0.9, 
+                              marker='o', zorder=12)
+                
+                # Mark start point (green)
+                ax.scatter([best_x[0]], [best_y[0]], c='green', s=150, 
+                          marker='o', edgecolors='black', linewidth=2, 
+                          label='Start', zorder=15)
+                
+                # Mark end point (red)
+                ax.scatter([best_x[-1]], [best_y[-1]], c='red', s=150, 
+                          marker='s', edgecolors='black', linewidth=2, 
+                          label='Best found', zorder=15)
+        
+        # Mark global optimum if known
+        optimum_point, optimum_value = get_function_optimum(func_name)
+        if optimum_point is not None and x_range and y_range:
+            if (x_range[0] <= optimum_point[0] <= x_range[1] and 
+                y_range[0] <= optimum_point[1] <= y_range[1]):
+                ax.scatter([optimum_point[0]], [optimum_point[1]], 
+                          c='white', s=200, marker='*', 
+                          edgecolors='black', linewidth=2,
+                          label='Global optimum', zorder=20)
+        
+        # Set labels and title
+        ax.set_xlabel('$x_1$', fontsize=14)
+        ax.set_ylabel('$x_2$', fontsize=14)
+        ax.set_title(f'{func_name.capitalize()} Function - {algorithm_name}', 
+                    fontsize=16, fontweight='bold', pad=15)
+        
+        # Set axis limits
+        if x_range and y_range:
+            ax.set_xlim(x_range[0], x_range[1])
+            ax.set_ylim(y_range[0], y_range[1])
+        
+        # Add grid
+        ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+        
+        # Add legend
+        if search_history:
+            legend = ax.legend(loc='best', fontsize=10, frameon=True, 
+                             fancybox=True, shadow=True, framealpha=0.9)
+            legend.get_frame().set_facecolor('white')
+        
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
+        
+        return fig, ax
+    
+    def plot_all_differential_evolution_grid(self, results_dict, save_path=None):
+
+        functions = [
+            'sphere', 'ackley', 'rastrigin', 
+            'rosenbrock', 'griewank', 'schwefel',
+            'levy', 'michalewicz', 'zakharov'
+        ]
+        
+        fig = plt.figure(figsize=(20, 16))
+        fig.suptitle('Differential Evolution on All Benchmark Functions (NP=20, F=0.5, CR=0.5, G=50)', 
+                    fontsize=20, fontweight='bold', y=0.95)
+        
+        for i, func_name in enumerate(functions):
+            ax = fig.add_subplot(3, 3, i+1, projection='3d')
+            
+            vis_bounds = get_effective_visualization_bounds(func_name)
+            X, Y, Z = self.create_meshgrid(func_name, vis_bounds, vis_bounds)
+            
+            surface = ax.plot_surface(X, Y, Z, cmap='plasma', alpha=0.8,
+                                    linewidth=0, antialiased=True, 
+                                    rcount=40, ccount=40, shade=True)
+            
+            if func_name in results_dict:
+                result = results_dict[func_name]
+                history = result['history']
+                best_points = [point for point in history if point[3]]
+                
+                if len(best_points) >= 2:
+                    x_traj = [point[0] for point in best_points]
+                    y_traj = [point[1] for point in best_points]
+                    z_traj = [point[2] for point in best_points]
+                    
+                    ax.plot(x_traj, y_traj, z_traj, color='white', linewidth=3, alpha=0.9)
+                    ax.plot(x_traj, y_traj, z_traj, color='red', linewidth=2, alpha=1.0)
+                    
+                    ax.scatter([x_traj[0]], [y_traj[0]], [z_traj[0]], 
+                              color='lime', s=80, marker='o', edgecolors='black', linewidth=1)
+                    ax.scatter([x_traj[-1]], [y_traj[-1]], [z_traj[-1]], 
+                              color='cyan', s=80, marker='s', edgecolors='black', linewidth=1)
+                
+                best_val = result['best_solution'].f
+                improvements = result['improvements']
+                ax.text2D(0.02, 0.98, f'best={best_val:.4f}\nimp={improvements}', 
+                         transform=ax.transAxes, 
                          fontsize=10, verticalalignment='top', 
                          bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
             
