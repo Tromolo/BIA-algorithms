@@ -371,7 +371,7 @@ class Visualizer:
         
         return fig, ax
     
-    def plot_all_differential_evolution_grid(self, results_dict, save_path=None):
+    def plot_all_differential_evolution_grid(self, results_dict, save_path=None, algorithm_name="Differential Evolution"):
 
         functions = [
             'sphere', 'ackley', 'rastrigin', 
@@ -380,8 +380,14 @@ class Visualizer:
         ]
         
         fig = plt.figure(figsize=(20, 16))
-        fig.suptitle('Differential Evolution on All Benchmark Functions (NP=20, F=0.5, CR=0.5, G=50)', 
-                    fontsize=20, fontweight='bold', y=0.95)
+        
+        # Set title based on algorithm
+        if algorithm_name == "Particle Swarm Optimization":
+            title = 'Particle Swarm Optimization on All Benchmark Functions (pop=15, c1=2.0, c2=2.0, w=0.9→0.4, M=50)'
+        else:
+            title = 'Differential Evolution on All Benchmark Functions (NP=20, F=0.5, CR=0.5, G=50)'
+        
+        fig.suptitle(title, fontsize=20, fontweight='bold', y=0.95)
         
         for i, func_name in enumerate(functions):
             ax = fig.add_subplot(3, 3, i+1, projection='3d')

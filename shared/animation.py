@@ -10,7 +10,6 @@ class AnimationCreator:
         self.resolution = resolution
     
     def create_meshgrid(self, func_name, x_range, y_range):
-        """Create meshgrid for function visualization"""
         x = np.linspace(x_range[0], x_range[1], self.resolution)
         y = np.linspace(y_range[0], y_range[1], self.resolution)
         X, Y = np.meshgrid(x, y)

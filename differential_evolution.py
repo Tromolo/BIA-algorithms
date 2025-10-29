@@ -19,7 +19,7 @@ class DifferentialEvolutionAlgorithm:
 
         function = Function(func_name)
         
-        # Step 1: Generate NP random individuals (initial population)
+        # Step 1: Generate NP random individuals
         pop = []
         for i in range(NP):
             individual = Solution(dimension, bounds[0], bounds[1])
@@ -51,7 +51,7 @@ class DifferentialEvolutionAlgorithm:
         while g < G_maxim:
             g += 1
             
-            # Create new generation (deep copy of current population)
+            # Create new generation
             new_pop = deepcopy(pop)
             
             # Step 3: For each individual in population
@@ -95,7 +95,7 @@ class DifferentialEvolutionAlgorithm:
                     # Replace target with trial in new population
                     new_pop[i] = trial_solution
                     
-                    # Track if this is an improvement (strictly better)
+                    # Track if this is an improvement
                     if (minimize and f_u < x.f) or (not minimize and f_u > x.f):
                         improvements += 1
                 

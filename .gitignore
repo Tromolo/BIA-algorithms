@@ -158,3 +158,5 @@ scratch.*
 # Log files
 *.log
 logs/
+# Ignore large GIF files
+*/gifs/*.gif
